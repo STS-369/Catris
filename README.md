@@ -25,7 +25,7 @@ Catris is a lightweight, cat-themed Tetris clone built with vanilla JavaScript a
 ## 🚀 Setup & Deployment
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Sophi-Thrice/Catris.git
+   git clone https://github.com/STS-369/Catris.git
    ```
 2. Open `index.html` in any modern web browser.
 3. **GitHub Pages:** This project is 100% compatible with GitHub Pages. Simply enable it in your repository settings to host it live!
