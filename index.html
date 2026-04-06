@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catris | Sophi's Portfolio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="sidebar left">
+            <h3>Next Cat</h3>
+            <canvas id="next" width="100" height="100"></canvas>
+            <div class="stats">
+                <p>Score: <span id="score">0</span></p>
+                <p>Lines: <span id="lines">0</span></p>
+            </div>
+        </div>
+
+        <div class="main-stage">
+            <canvas id="tetris" width="240" height="400"></canvas>
+            <div id="overlay" class="overlay">
+                <div class="content">
+                    <h1>CATRIS</h1>
+                    <p>Purr-fectly Stacked!</p>
+                    <button id="start-btn">Start Meow!</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar right">
+            <h3>Controls</h3>
+            <ul>
+                <li>⬅️ Move Left</li>
+                <li>➡️ Move Right</li>
+                <li>⬆️ Rotate</li>
+                <li>⬇️ Soft Drop</li>
+                <li>Space Hard Drop</li>
+            </ul>
+        </div>
+    </div>
+    <script src="catris.js"></script>
+</body>
+</html>

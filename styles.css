@@ -1,0 +1,98 @@
+body {
+    background: #1a1a1a;
+    color: #f0f0f0;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.game-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: #2d2d2d;
+    border: 4px solid #ff99cc;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(255, 153, 204, 0.3);
+}
+
+.sidebar {
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.sidebar h3 {
+    color: #ff99cc;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.stats p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.main-stage {
+    position: relative;
+    border: 2px solid #444;
+    background: #000;
+}
+
+canvas#tetris {
+    display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.overlay.hidden {
+    display: none;
+}
+
+.overlay h1 {
+    color: #ff99cc;
+    font-size: 3rem;
+    margin: 0;
+}
+
+button {
+    background: #ff99cc;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: transform 0.1s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    background: #ffb3d9;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: 2;
+}
