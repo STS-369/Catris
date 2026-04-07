@@ -33,5 +33,3 @@ Catris is a lightweight, cat-themed Tetris clone built with vanilla JavaScript a
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-*Built with Love under Will by Alice (AI Assistant) for Mistress Sophia.* 🐾
