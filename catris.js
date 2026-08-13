@@ -33,6 +33,7 @@ const overlayLevelup = document.getElementById('overlay-levelup');
 const overlaySaves = document.getElementById('overlay-saves');
 const overlayHighscores = document.getElementById('overlay-highscores');
 const overlaySkins = document.getElementById('overlay-skins');
+const overlayStore = document.getElementById('overlay-store');
 
 context.scale(20, 20);
 nextContext.scale(20, 20);
@@ -88,6 +89,140 @@ const SKIN_PACKS = [
 let activeSkinId = localStorage.getItem('catris_skin') || 'classic';
 function getActiveSkin() {
     return SKIN_PACKS.find(s => s.id === activeSkinId) || SKIN_PACKS[0];
+}
+
+// ============================================================
+// CREDIT SYSTEM — Play-to-Win
+// ============================================================
+const CREDIT_EARNINGS = {
+    LINE_CLEAR: 10,
+    LEVEL_COMPLETE: 500,
+    COMBO_BONUS: 10,       // per combo level
+    DAILY_LOGIN: 50,
+    HIGH_SCORE: 200,
+};
+
+const CREDIT_COSTS = {
+    SKIN_PACK: { royal: 1500, food: 2000, space: 3000, spooky: 2500, heart: 1000 },
+    EXTRA_LIFE: 200,
+    SAVE_SLOT: 500,
+    POWERUP_PACK: 300,
+};
+
+const STORE_ITEMS = [
+    { id: 'skin_royal', name: 'Royal Cats', icon: '👑', desc: 'Crown & gem cat skins', cost: 1500, type: 'skin', skinId: 'royal' },
+    { id: 'skin_food', name: 'Food Cats', icon: '🍣', desc: 'Sushi & dessert cats', cost: 2000, type: 'skin', skinId: 'food' },
+    { id: 'skin_space', name: 'Space Cats', icon: '🚀', desc: 'Rocket & star cats', cost: 3000, type: 'skin', skinId: 'space' },
+    { id: 'skin_spooky', name: 'Spooky Cats', icon: '👻', desc: 'Ghost & pumpkin cats', cost: 2500, type: 'skin', skinId: 'spooky' },
+    { id: 'skin_heart', name: 'Love Cats', icon: '❤️', desc: 'Heart & love cats', cost: 1000, type: 'skin', skinId: 'heart' },
+    { id: 'extra_life', name: 'Extra Life', icon: '💖', desc: '+1 life when starting', cost: 200, type: 'consumable' },
+    { id: 'save_slot', name: 'Save Slot', icon: '💾', desc: 'Unlock extra save slot', cost: 500, type: 'permanent' },
+    { id: 'powerup_pack', name: 'Power-Up Pack', icon: '⚡', desc: '3 random power-ups', cost: 300, type: 'consumable' },
+];
+
+let wallet = {
+    credits: 0,
+    totalEarned: 0,
+    totalSpent: 0,
+    lastLogin: null,
+    ownedSkins: ['classic'],
+    extraLivesPurchased: 0,
+    saveSlotsUnlocked: 0,
+    purchaseHistory: [],
+};
+
+function loadWallet() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('catris_wallet'));
+        if (saved) {
+            wallet = { ...wallet, ...saved };
+        }
+    } catch {}
+    // Ensure classic skin is always owned
+    if (!wallet.ownedSkins.includes('classic')) {
+        wallet.ownedSkins.push('classic');
+    }
+    syncSkinUnlocks();
+}
+
+function saveWallet() {
+    localStorage.setItem('catris_wallet', JSON.stringify(wallet));
+}
+
+function syncSkinUnlocks() {
+    SKIN_PACKS.forEach(pack => {
+        pack.unlocked = wallet.ownedSkins.includes(pack.id);
+    });
+}
+
+function earnCredits(amount, reason) {
+    wallet.credits += amount;
+    wallet.totalEarned += amount;
+    saveWallet();
+    updateCreditUI();
+    showCreditPopup(amount, reason);
+}
+
+function spendCredits(amount, reason) {
+    if (wallet.credits < amount) return false;
+    wallet.credits -= amount;
+    wallet.totalSpent += amount;
+    wallet.purchaseHistory.push({
+        amount,
+        reason,
+        date: new Date().toISOString(),
+    });
+    saveWallet();
+    updateCreditUI();
+    return true;
+}
+
+function checkDailyLogin() {
+    const today = new Date().toDateString();
+    if (wallet.lastLogin !== today) {
+        wallet.lastLogin = today;
+        saveWallet();
+        // Award daily login bonus
+        setTimeout(() => {
+            earnCredits(CREDIT_EARNINGS.DAILY_LOGIN, 'Daily Login Bonus');
+        }, 1500);
+    }
+}
+
+function getExtraSaveSlots() {
+    return 2 + wallet.saveSlotsUnlocked; // base 2 + purchased
+}
+
+// ============================================================
+// CREDIT POPUP
+// ============================================================
+let popupTimeout = null;
+
+function showCreditPopup(amount, reason) {
+    const popup = document.getElementById('credit-popup');
+    const popupAmount = document.getElementById('popup-amount');
+    const popupReason = document.getElementById('popup-reason');
+
+    popupAmount.textContent = '+' + amount;
+    popupReason.textContent = reason || '';
+
+    // Reset animation
+    popup.classList.remove('hidden');
+    popup.style.animation = 'none';
+    popup.offsetHeight; // trigger reflow
+    popup.style.animation = '';
+
+    if (popupTimeout) clearTimeout(popupTimeout);
+    popupTimeout = setTimeout(() => {
+        popup.classList.add('hidden');
+    }, 2000);
+}
+
+function updateCreditUI() {
+    const creditsEl = document.getElementById('credits');
+    if (creditsEl) creditsEl.textContent = wallet.credits;
+    const storeCreditsEl = document.getElementById('store-credits');
+    if (storeCreditsEl) storeCreditsEl.textContent = wallet.credits;
 }
 
 // ============================================================
@@ -459,6 +594,16 @@ function arenaSweep() {
         game.score += totalPoints;
         game.lines += rowsCleared;
 
+        // === CREDIT EARNINGS ===
+        // Credits for line clear
+        const lineCredits = rowsCleared * CREDIT_EARNINGS.LINE_CLEAR;
+        // Combo bonus credits
+        const comboCredits = (game.combo - 1) * CREDIT_EARNINGS.COMBO_BONUS;
+        const totalCredits = lineCredits + comboCredits;
+        if (totalCredits > 0) {
+            earnCredits(totalCredits, `Line Clear (${rowsCleared}x)`);
+        }
+
         // Power-up drops: random chance on clear
         if (Math.random() < 0.15) {
             grantRandomPowerup();
@@ -666,6 +811,9 @@ function advanceToNextLevel() {
     game.running = true;
     lastTime = performance.now();
     update(lastTime);
+
+    // === CREDIT EARNINGS: Level Complete ===
+    earnCredits(CREDIT_EARNINGS.LEVEL_COMPLETE, `Level ${game.level - 1} Complete!`);
 }
 
 function applyLevelState() {
@@ -711,6 +859,8 @@ function gameOver() {
     const newHsEl = document.getElementById('new-highscore');
     if (isNewHigh) {
         newHsEl.classList.remove('hidden');
+        // === CREDIT EARNINGS: New High Score ===
+        earnCredits(CREDIT_EARNINGS.HIGH_SCORE, 'New High Score!');
     } else {
         newHsEl.classList.add('hidden');
     }
@@ -859,8 +1009,9 @@ function updateAllUI() {
 }
 
 function updateLivesUI() {
+    const totalLives = MAX_LIVES + wallet.extraLivesPurchased;
     let hearts = '';
-    for (let i = 0; i < MAX_LIVES; i++) {
+    for (let i = 0; i < totalLives; i++) {
         hearts += i < game.lives ? '❤️' : '🖤';
     }
     livesEl.textContent = hearts;
@@ -899,7 +1050,7 @@ function updateLevelProgressUI() {
 
 function hideAllOverlays() {
     [overlayStart, overlayPause, overlayGameover, overlayLevelup,
-     overlaySaves, overlayHighscores, overlaySkins].forEach(o => {
+     overlaySaves, overlayHighscores, overlaySkins, overlayStore].forEach(o => {
         o.classList.add('hidden');
     });
 }
@@ -989,7 +1140,100 @@ function renderHighScores() {
 }
 
 // ============================================================
-// SKINS UI
+// STORE SYSTEM
+// ============================================================
+function renderStore() {
+    const container = document.getElementById('store-list');
+    container.innerHTML = '';
+    document.getElementById('store-credits').textContent = wallet.credits;
+
+    STORE_ITEMS.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'store-item';
+
+        let owned = false;
+        let btnHtml = '';
+
+        if (item.type === 'skin') {
+            owned = wallet.ownedSkins.includes(item.skinId);
+            if (owned) {
+                div.classList.add('owned');
+                btnHtml = `<button class="store-buy-btn owned-btn" disabled>✓ Owned</button>`;
+            } else if (wallet.credits >= item.cost) {
+                btnHtml = `<button class="store-buy-btn" data-item="${item.id}">Buy 🪙${item.cost}</button>`;
+            } else {
+                btnHtml = `<button class="store-buy-btn" disabled>Need 🪙${item.cost}</button>`;
+            }
+        } else if (item.type === 'consumable') {
+            btnHtml = wallet.credits >= item.cost
+                ? `<button class="store-buy-btn" data-item="${item.id}">Buy 🪙${item.cost}</button>`
+                : `<button class="store-buy-btn" disabled>Need 🪙${item.cost}</button>`;
+        } else if (item.type === 'permanent') {
+            if (item.id === 'save_slot') {
+                const maxSlots = getExtraSaveSlots();
+                if (maxSlots >= 7) {
+                    div.classList.add('owned');
+                    btnHtml = `<button class="store-buy-btn owned-btn" disabled>✓ Max Slots</button>`;
+                } else if (wallet.credits >= item.cost) {
+                    btnHtml = `<button class="store-buy-btn" data-item="${item.id}">Buy 🪙${item.cost}</button>`;
+                } else {
+                    btnHtml = `<button class="store-buy-btn" disabled>Need 🪙${item.cost}</button>`;
+                }
+            }
+        }
+
+        div.innerHTML = `
+            <div class="store-item-icon">${item.icon}</div>
+            <div class="store-item-name">${item.name}</div>
+            <div class="store-item-desc">${item.desc}</div>
+            <div class="store-item-cost">🪙 ${item.cost}</div>
+            ${btnHtml}`;
+
+        container.appendChild(div);
+    });
+
+    // Bind buy buttons
+    container.querySelectorAll('.store-buy-btn[data-item]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const itemId = e.target.dataset.item;
+            purchaseStoreItem(itemId);
+        });
+    });
+}
+
+function purchaseStoreItem(itemId) {
+    const item = STORE_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+
+    if (!spendCredits(item.cost, item.name)) {
+        showCreditPopup(0, 'Not enough credits!');
+        return;
+    }
+
+    if (item.type === 'skin') {
+        wallet.ownedSkins.push(item.skinId);
+        syncSkinUnlocks();
+        showCreditPopup(0, `${item.name} Unlocked! 🎉`);
+    } else if (item.id === 'extra_life') {
+        wallet.extraLivesPurchased++;
+        showCreditPopup(0, '+1 Extra Life! 💖');
+    } else if (item.id === 'save_slot') {
+        wallet.saveSlotsUnlocked++;
+        showCreditPopup(0, 'Save Slot Unlocked! 💾');
+    } else if (item.id === 'powerup_pack') {
+        // Grant 3 random power-ups
+        for (let i = 0; i < 3; i++) {
+            grantRandomPowerup();
+        }
+        showCreditPopup(0, '3 Power-Ups Granted! ⚡');
+    }
+
+    saveWallet();
+    renderStore();
+}
+
+// ============================================================
+// SKINS UI (Updated with credit-based unlock)
 // ============================================================
 function renderSkins() {
     const container = document.getElementById('skins-list');
@@ -1005,7 +1249,8 @@ function renderSkins() {
         if (pack.id === activeSkinId) {
             statusHtml = '<div class="skin-status unlocked">✓ Active</div>';
         } else if (!pack.unlocked) {
-            statusHtml = '<div class="skin-status premium">🔒 Premium</div>';
+            const cost = CREDIT_COSTS.SKIN_PACK[pack.id] || 1000;
+            statusHtml = `<div class="skin-status premium">🔒 ${cost} Credits</div>`;
         } else {
             statusHtml = '<div class="skin-status unlocked">Unlocked</div>';
         }
@@ -1022,8 +1267,10 @@ function renderSkins() {
                 localStorage.setItem('catris_skin', activeSkinId);
                 renderSkins();
             } else {
-                // For demo: unlock on double-click (premium placeholder)
-                alert('Premium skin! In the full version, this would cost $0.99 🐱');
+                // Redirect to store
+                overlaySkins.classList.add('hidden');
+                renderStore();
+                overlayStore.classList.remove('hidden');
             }
         });
 
@@ -1040,7 +1287,7 @@ function startGame() {
     game.lines = 0;
     game.combo = 0;
     game.maxCombo = 0;
-    game.lives = MAX_LIVES;
+    game.lives = MAX_LIVES + wallet.extraLivesPurchased;
     game.totalPieces = 0;
     game.bombPiecesSpawned = 0;
     game.powerups = { slow: 0, clear: 0, bomb: 0 };
@@ -1158,6 +1405,14 @@ document.getElementById('close-skins-btn').addEventListener('click', () => {
     overlaySkins.classList.add('hidden');
 });
 
+document.getElementById('store-btn').addEventListener('click', () => {
+    renderStore();
+    overlayStore.classList.remove('hidden');
+});
+document.getElementById('close-store-btn').addEventListener('click', () => {
+    overlayStore.classList.add('hidden');
+});
+
 document.getElementById('levelup-btn').addEventListener('click', advanceToNextLevel);
 
 // Power-up button clicks
@@ -1173,5 +1428,9 @@ document.getElementById('donate-btn').addEventListener('click', () => {
 // ============================================================
 // INIT
 // ============================================================
+loadWallet();
+syncSkinUnlocks();
+updateCreditUI();
 updateHighScoreDisplay();
 updateLivesUI();
+checkDailyLogin();

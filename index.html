@@ -43,6 +43,14 @@
             <div class="info-block">
                 <p>High Score: <span id="highscore">0</span></p>
             </div>
+
+            <div class="info-block credits-block">
+                <div class="credits-display">
+                    <span class="credits-icon">🪙</span>
+                    <span class="label">Credits</span>
+                    <span id="credits" class="big-number">0</span>
+                </div>
+            </div>
         </div>
 
         <!-- Main Game Stage -->
@@ -65,6 +73,7 @@
                     <button id="load-btn" class="btn-secondary">💾 Load Game</button>
                     <button id="highscores-btn" class="btn-secondary">🏆 High Scores</button>
                     <button id="skins-btn" class="btn-secondary">🎨 Cat Skins</button>
+                    <button id="store-btn" class="btn-store">🛒 Cat Store</button>
                     <button id="donate-btn" class="btn-donate">☕ Donate</button>
                 </div>
             </div>
@@ -124,6 +133,25 @@
                     <div id="skins-list" class="skins-list"></div>
                     <button id="close-skins-btn" class="btn-secondary">✖ Close</button>
                 </div>
+            </div>
+
+            <div id="overlay-store" class="overlay hidden">
+                <div class="content">
+                    <h1>🛒 Cat Store</h1>
+                    <div class="store-credits-header">
+                        <span class="credits-icon">🪙</span>
+                        <span>Your Credits: <strong id="store-credits">0</strong></span>
+                    </div>
+                    <div id="store-list" class="store-list"></div>
+                    <button id="close-store-btn" class="btn-secondary">✖ Close</button>
+                </div>
+            </div>
+
+            <!-- Credit Earnings Popup -->
+            <div id="credit-popup" class="credit-popup hidden">
+                <span class="popup-icon">🪙</span>
+                <span id="popup-amount" class="popup-amount">+0</span>
+                <span id="popup-reason" class="popup-reason"></span>
             </div>
         </div>
 
