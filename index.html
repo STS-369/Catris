@@ -64,23 +64,12 @@
                 <button id="pu-bomb" class="pu-btn" title="Bomb (press 3)" disabled>💣 ×<span id="pu-bomb-count">0</span></button>
             </div>
 
-            <!-- Mobile Touch Controls -->
-            <div id="touch-controls" class="touch-controls">
-                <div class="touch-row touch-top">
-                    <button id="touch-rotate" class="touch-btn touch-rotate" aria-label="Rotate">🔄</button>
-                    <button id="touch-hard-drop" class="touch-btn touch-hard-drop" aria-label="Hard Drop">⏬</button>
-                </div>
-                <div class="touch-row touch-middle">
-                    <button id="touch-left" class="touch-btn" aria-label="Move Left">◀️</button>
-                    <button id="touch-down" class="touch-btn touch-down" aria-label="Soft Drop">⬇️</button>
-                    <button id="touch-right" class="touch-btn" aria-label="Move Right">▶️</button>
-                </div>
-                <div class="touch-row touch-powerups">
-                    <button id="touch-pu-slow" class="touch-pu-btn" aria-label="Slow Time">🕐</button>
-                    <button id="touch-pu-clear" class="touch-pu-btn" aria-label="Clear Line">✨</button>
-                    <button id="touch-pu-bomb" class="touch-pu-btn" aria-label="Bomb">💣</button>
-                </div>
-            </div>
+            <!-- Tap feedback overlay -->
+            <div id="tap-feedback" class="tap-feedback"></div>
+
+            <!-- Edge indicators (mobile) -->
+            <div id="edge-left" class="edge-indicator edge-left">◀</div>
+            <div id="edge-right" class="edge-indicator edge-right">▶</div>
 
             <!-- Overlays -->
             <div id="overlay-start" class="overlay visible">

@@ -1468,28 +1468,106 @@ window.addEventListener('orientationchange', () => {
 });
 
 // ============================================================
-// TOUCH CONTROLS — Swipe gestures on canvas
+// TOUCH CONTROLS — Tap-in-direction + swipe gestures
 // ============================================================
+// Controls map (on canvas):
+//   Tap LEFT  third  = move block left
+//   Tap RIGHT third  = move block right
+//   Tap CENTER third = rotate block
+//   Swipe DOWN       = hard drop
+//   Swipe LEFT/RIGHT = move block in that direction
+//   Long press       = soft drop (continuous)
+// ============================================================
+const tapFeedback = document.getElementById('tap-feedback');
 let touchStartX = 0;
 let touchStartY = 0;
 let touchStartTime = 0;
+let longPressTimer = null;
+let longPressActive = false;
 const SWIPE_THRESHOLD = 30;
-const TAP_THRESHOLD = 10;
+const TAP_THRESHOLD = 15;
+const LONG_PRESS_DELAY = 400; // ms before soft-drop starts
+
+function showTapFeedback(type) {
+    if (!tapFeedback) return;
+    // Remove any existing flash class
+    tapFeedback.className = 'tap-feedback';
+    // Force reflow so the animation restarts
+    void tapFeedback.offsetWidth;
+    // Add the new flash class
+    tapFeedback.classList.add('flash-' + type);
+    // Clear after a short duration
+    setTimeout(() => {
+        tapFeedback.className = 'tap-feedback';
+    }, 120);
+}
+
+function getTapZone(clientX) {
+    // Returns 'left', 'center', or 'right' based on position within canvas
+    const rect = canvas.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const pct = relX / rect.width;
+    if (pct < 0.33) return 'left';
+    if (pct > 0.67) return 'right';
+    return 'center';
+}
 
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (!game.running || game.paused) return;
     const touch = e.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
     touchStartTime = Date.now();
+    longPressActive = false;
+
+    // Start long-press timer for soft drop
+    longPressTimer = setTimeout(() => {
+        longPressActive = true;
+        // Start continuous soft drop
+        const softDropInterval = setInterval(() => {
+            if (!game.running || game.paused || !longPressActive) {
+                clearInterval(softDropInterval);
+                return;
+            }
+            playerDrop();
+        }, 80);
+        // Store interval so we can clear it on touchend
+        canvas._softDropInterval = softDropInterval;
+    }, LONG_PRESS_DELAY);
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
+    // Cancel long-press if finger moves significantly
+    if (longPressTimer) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - touchStartX);
+        const dy = Math.abs(touch.clientY - touchStartY);
+        if (dx > TAP_THRESHOLD || dy > TAP_THRESHOLD) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    }
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
+    // Clear long-press timer and interval
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+    if (canvas._softDropInterval) {
+        clearInterval(canvas._softDropInterval);
+        canvas._softDropInterval = null;
+    }
+    // If long-press was active, just stop — don't process the tap
+    if (longPressActive) {
+        longPressActive = false;
+        return;
+    }
+
     if (!game.running || game.paused) return;
 
     const touch = e.changedTouches[0];
@@ -1499,88 +1577,48 @@ canvas.addEventListener('touchend', (e) => {
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
-    // Tap to rotate (short touch, small movement)
+    // --- TAP detection (short touch, small movement) ---
     if (absDx < TAP_THRESHOLD && absDy < TAP_THRESHOLD && dt < 300) {
-        playerRotate(1);
+        const zone = getTapZone(touch.clientX);
+        if (zone === 'left') {
+            playerMove(-1);
+            showTapFeedback('left');
+        } else if (zone === 'right') {
+            playerMove(1);
+            showTapFeedback('right');
+        } else {
+            // Center = rotate
+            playerRotate(1);
+            showTapFeedback('center');
+        }
         return;
     }
 
-    // Swipe detection
+    // --- SWIPE detection ---
     if (absDx > SWIPE_THRESHOLD || absDy > SWIPE_THRESHOLD) {
-        if (absDx > absDy) {
-            // Horizontal swipe
+        if (absDy > absDx && dy > 0) {
+            // Swipe down = HARD DROP
+            hardDrop();
+            showTapFeedback('down');
+        } else if (absDx > absDy) {
+            // Horizontal swipe = move in that direction
             if (dx > 0) {
-                playerMove(1);  // right
+                playerMove(1);
+                showTapFeedback('right');
             } else {
-                playerMove(-1); // left
-            }
-        } else {
-            // Vertical swipe
-            if (dy > 0) {
-                playerDrop();   // swipe down = soft drop
+                playerMove(-1);
+                showTapFeedback('left');
             }
         }
     }
 }, { passive: false });
 
-// ============================================================
-// ON-SCREEN BUTTON CONTROLS (Mobile)
-// ============================================================
-function setupTouchButton(id, action) {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-
-    // Use mousedown for immediate response (no 300ms delay)
-    btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        if (!game.running || game.paused) return;
-        action();
-    });
-    btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (!game.running || game.paused) return;
-        action();
-    }, { passive: false });
-}
-
-setupTouchButton('touch-left', () => playerMove(-1));
-setupTouchButton('touch-right', () => playerMove(1));
-setupTouchButton('touch-down', () => playerDrop());
-setupTouchButton('touch-rotate', () => playerRotate(1));
-setupTouchButton('touch-hard-drop', () => hardDrop());
-
-// Touch power-up buttons
-setupTouchButton('touch-pu-slow', () => activatePowerup('slow'));
-setupTouchButton('touch-pu-clear', () => activatePowerup('clear'));
-setupTouchButton('touch-pu-bomb', () => activatePowerup('bomb'));
-
-// Repeating hold for left/right/down
-function startHold(id, action) {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-
-    let holdInterval = null;
-    const startHoldAction = (e) => {
-        e.preventDefault();
-        if (!game.running || game.paused) return;
-        action();
-        holdInterval = setInterval(() => {
-            if (!game.running || game.paused) { clearInterval(holdInterval); return; }
-            action();
-        }, 100);
-    };
-    const stopHold = () => { if (holdInterval) { clearInterval(holdInterval); holdInterval = null; } };
-
-    btn.addEventListener('mousedown', startHoldAction);
-    btn.addEventListener('touchstart', startHoldAction, { passive: false });
-    btn.addEventListener('mouseup', stopHold);
-    btn.addEventListener('mouseleave', stopHold);
-    btn.addEventListener('touchend', stopHold);
-    btn.addEventListener('touchcancel', stopHold);
-}
-startHold('touch-left', () => playerMove(-1));
-startHold('touch-right', () => playerMove(1));
-startHold('touch-down', () => playerDrop());
+// Cancel soft drop if touch is cancelled
+canvas.addEventListener('touchcancel', (e) => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    if (canvas._softDropInterval) { clearInterval(canvas._softDropInterval); canvas._softDropInterval = null; }
+    longPressActive = false;
+});
 
 // ============================================================
 // INIT
