@@ -1,4 +1,8 @@
 /* === BASE === */
+* {
+    box-sizing: border-box;
+}
+
 body {
     background: #1a1a1a;
     color: #f0f0f0;
@@ -7,9 +11,12 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 /* === AD BANNER === */
@@ -48,11 +55,13 @@ body {
     border: 4px solid #ff99cc;
     border-radius: 15px;
     box-shadow: 0 0 20px rgba(255, 153, 204, 0.3);
+    max-width: 100%;
 }
 
 /* === SIDEBARS === */
 .sidebar {
     width: 160px;
+    min-width: 120px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -123,9 +132,12 @@ body {
     position: relative;
     border: 2px solid #444;
     background: #000;
+    flex-shrink: 0;
 }
 canvas#tetris {
     display: block;
+    max-width: 100%;
+    height: auto;
 }
 
 /* === POWER-UPS BAR === */
@@ -146,10 +158,13 @@ canvas#tetris {
     color: #f0f0f0;
     font-size: 0.75rem;
     padding: 4px 8px;
+    min-height: 44px;
+    min-width: 44px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s;
     font-family: inherit;
+    touch-action: manipulation;
 }
 .pu-btn:hover:not(:disabled) {
     background: #ff99cc;
@@ -171,6 +186,83 @@ canvas#tetris {
     to   { box-shadow: 0 0 15px #ffcc00; }
 }
 
+/* === TOUCH CONTROLS (Mobile only) === */
+.touch-controls {
+    display: none;
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    z-index: 5;
+    background: rgba(0, 0, 0, 0.85);
+    border-top: 1px solid #333;
+}
+.touch-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 6px 0;
+}
+.touch-btn {
+    background: rgba(255, 153, 204, 0.2);
+    border: 2px solid rgba(255, 153, 204, 0.4);
+    color: #fff;
+    font-size: 1.5rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.touch-btn:active {
+    background: rgba(255, 153, 204, 0.5);
+    transform: scale(0.92);
+}
+.touch-btn.touch-rotate {
+    background: rgba(255, 204, 0, 0.2);
+    border-color: rgba(255, 204, 0, 0.4);
+}
+.touch-btn.touch-rotate:active {
+    background: rgba(255, 204, 0, 0.5);
+}
+.touch-btn.touch-hard-drop {
+    background: rgba(100, 200, 255, 0.2);
+    border-color: rgba(100, 200, 255, 0.4);
+}
+.touch-btn.touch-hard-drop:active {
+    background: rgba(100, 200, 255, 0.5);
+}
+.touch-btn.touch-down {
+    width: 60px;
+    height: 60px;
+}
+.touch-pu-btn {
+    background: rgba(255, 204, 0, 0.15);
+    border: 1px solid rgba(255, 204, 0, 0.3);
+    color: #fff;
+    font-size: 1.1rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.touch-pu-btn:active {
+    background: rgba(255, 204, 0, 0.4);
+}
+
 /* === OVERLAYS === */
 .overlay {
     position: absolute;
@@ -189,6 +281,8 @@ canvas#tetris {
 .overlay .content {
     text-align: center;
     padding: 20px;
+    max-height: 100%;
+    overflow-y: auto;
 }
 .overlay h1 {
     color: #ff99cc;
@@ -230,18 +324,20 @@ canvas#tetris {
 }
 
 /* === BUTTONS === */
-.btn-primary, .btn-secondary, .btn-donate {
+.btn-primary, .btn-secondary, .btn-donate, .btn-store {
     display: block;
     width: 200px;
     margin: 8px auto;
     border: none;
     padding: 10px 16px;
+    min-height: 44px;
     font-size: 1rem;
     font-family: inherit;
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.15s;
     text-align: center;
+    touch-action: manipulation;
 }
 .btn-primary {
     background: #ff99cc;
@@ -308,11 +404,13 @@ canvas#tetris {
 }
 .save-slot button {
     padding: 4px 10px;
+    min-height: 44px;
     font-size: 0.75rem;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
+    touch-action: manipulation;
 }
 .slot-save-btn {
     background: #4a4;
@@ -363,6 +461,8 @@ canvas#tetris {
     text-align: center;
     cursor: pointer;
     transition: all 0.15s;
+    min-height: 44px;
+    touch-action: manipulation;
 }
 .skin-pack:hover {
     border-color: #ff99cc;
@@ -423,31 +523,6 @@ canvas#tetris {
     font-size: 0.7rem;
     color: #999;
     margin: 4px 0 0;
-}
-
-/* === BUTTON === */
-button {
-    background: #ff99cc;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1.2rem;
-    font-family: inherit;
-    cursor: pointer;
-    border-radius: 5px;
-    margin-top: 20px;
-    transition: transform 0.1s;
-}
-button:hover {
-    transform: scale(1.05);
-    background: #ffb3d9;
-}
-
-/* === RESPONSIVE === */
-@media (max-height: 700px) {
-    .game-container { padding: 10px; gap: 12px; }
-    .sidebar { width: 130px; }
-    .overlay h1 { font-size: 1.8rem; }
-    .btn-primary, .btn-secondary, .btn-donate, .btn-store { width: 170px; font-size: 0.9rem; }
 }
 
 /* === CREDIT DISPLAY === */
@@ -545,12 +620,14 @@ button:hover {
     color: #1a1a1a;
     border: none;
     padding: 6px 14px;
+    min-height: 44px;
     border-radius: 4px;
     font-size: 0.75rem;
     font-weight: bold;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s;
+    touch-action: manipulation;
 }
 .store-buy-btn:hover {
     background: #ffdd44;
@@ -605,4 +682,230 @@ button:hover {
     20% { opacity: 1; transform: translate(-50%, -50%); }
     80% { opacity: 1; transform: translate(-50%, -50%); }
     100% { opacity: 0; transform: translate(-50%, -70%); }
+}
+
+/* ===========================================================
+   RESPONSIVE BREAKPOINTS
+   =========================================================== */
+
+/* --- Small Mobile (max-width: 414px) --- */
+@media (max-width: 414px) {
+    body {
+        padding: 4px;
+    }
+
+    .ad-banner {
+        max-width: 100%;
+        margin-bottom: 6px;
+    }
+    .ad-placeholder {
+        font-size: 0.7rem;
+    }
+
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 8px;
+        gap: 8px;
+        border-width: 2px;
+        border-radius: 10px;
+    }
+
+    /* Hide sidebars on mobile — controls shown via touch */
+    .sidebar.left {
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+        gap: 6px;
+    }
+    .sidebar.left h3 {
+        width: 100%;
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+    }
+    .sidebar.left .info-block {
+        flex: 1 1 45%;
+        min-width: 100px;
+        margin: 3px 0;
+        padding: 6px;
+    }
+    .sidebar.left .big-number {
+        font-size: 1.4rem;
+    }
+    .sidebar.left ul {
+        display: none;
+    }
+
+    .sidebar.right {
+        display: none;
+    }
+
+    .main-stage {
+        width: 100%;
+        max-width: 300px;
+    }
+    canvas#tetris {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .touch-controls {
+        display: block;
+    }
+
+    .powerups-bar {
+        display: none;
+    }
+
+    .overlay h1 {
+        font-size: 1.5rem;
+    }
+    .overlay .tagline {
+        font-size: 0.85rem;
+    }
+    .overlay .content {
+        padding: 12px;
+    }
+
+    .btn-primary, .btn-secondary, .btn-donate, .btn-store {
+        width: 180px;
+        font-size: 0.9rem;
+        padding: 10px 12px;
+    }
+
+    .skins-list {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+    .skin-pack {
+        padding: 6px;
+    }
+    .skin-emojis {
+        font-size: 1.2rem;
+    }
+
+    .store-list {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .save-slot {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+    }
+    .save-slot .slot-info {
+        text-align: center;
+    }
+    .save-slot .slot-actions {
+        justify-content: center;
+    }
+}
+
+/* --- Mobile (max-width: 768px) --- */
+@media (max-width: 768px) {
+    body {
+        padding: 4px;
+    }
+
+    .ad-banner {
+        max-width: 100%;
+        margin-bottom: 6px;
+    }
+
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+        border-width: 3px;
+        border-radius: 12px;
+    }
+
+    .sidebar.left {
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+        gap: 6px;
+    }
+    .sidebar.left h3 {
+        width: 100%;
+        font-size: 0.85rem;
+    }
+    .sidebar.left .info-block {
+        flex: 1 1 45%;
+        min-width: 110px;
+    }
+
+    .sidebar.right {
+        display: none;
+    }
+
+    .main-stage {
+        width: 100%;
+        max-width: 360px;
+    }
+    canvas#tetris {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .touch-controls {
+        display: block;
+    }
+
+    .powerups-bar {
+        display: none;
+    }
+
+    .overlay h1 {
+        font-size: 1.7rem;
+    }
+    .overlay .content {
+        padding: 15px;
+    }
+
+    .btn-primary, .btn-secondary, .btn-donate, .btn-store {
+        width: 190px;
+        font-size: 0.95rem;
+    }
+
+    .store-list {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* --- Tablet (769px - 1024px) --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .game-container {
+        gap: 14px;
+        padding: 14px;
+    }
+    .sidebar {
+        width: 140px;
+    }
+    .sidebar h3 {
+        font-size: 0.85rem;
+    }
+
+    .touch-controls {
+        display: none;
+    }
+}
+
+/* --- Desktop (1025px+) --- */
+@media (min-width: 1025px) {
+    .touch-controls {
+        display: none;
+    }
+}
+
+/* --- Short Viewport (height < 700px) --- */
+@media (max-height: 700px) {
+    .game-container { padding: 10px; gap: 12px; }
+    .sidebar { width: 130px; }
+    .overlay h1 { font-size: 1.8rem; }
+    .btn-primary, .btn-secondary, .btn-donate, .btn-store { width: 170px; font-size: 0.9rem; }
 }

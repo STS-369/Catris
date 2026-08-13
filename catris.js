@@ -1426,6 +1426,163 @@ document.getElementById('donate-btn').addEventListener('click', () => {
 });
 
 // ============================================================
+// MOBILE & RESPONSIVE CANVAS
+// ============================================================
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (window.innerWidth <= 768);
+
+function resizeCanvas() {
+    const mainStage = document.querySelector('.main-stage');
+    if (!mainStage) return;
+
+    const containerWidth = mainStage.parentElement.clientWidth;
+    const isSmallScreen = window.innerWidth <= 768;
+
+    if (isSmallScreen) {
+        // On mobile, canvas fills available width (with some padding)
+        const maxW = Math.min(containerWidth - 16, 300);
+        canvas.style.width = maxW + 'px';
+        canvas.style.height = (maxW * (ARENA_H / ARENA_W)) + 'px';
+        canvas.width = ARENA_W * 20;
+        canvas.height = ARENA_H * 20;
+    } else {
+        // Desktop: fixed size
+        canvas.style.width = '';
+        canvas.style.height = '';
+        canvas.width = 240;
+        canvas.height = 400;
+    }
+    context.scale(20, 20);
+}
+
+// Debounced resize
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        resizeCanvas();
+    }, 150);
+});
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 300);
+});
+
+// ============================================================
+// TOUCH CONTROLS — Swipe gestures on canvas
+// ============================================================
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+const SWIPE_THRESHOLD = 30;
+const TAP_THRESHOLD = 10;
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (!game.running || game.paused) return;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // Tap to rotate (short touch, small movement)
+    if (absDx < TAP_THRESHOLD && absDy < TAP_THRESHOLD && dt < 300) {
+        playerRotate(1);
+        return;
+    }
+
+    // Swipe detection
+    if (absDx > SWIPE_THRESHOLD || absDy > SWIPE_THRESHOLD) {
+        if (absDx > absDy) {
+            // Horizontal swipe
+            if (dx > 0) {
+                playerMove(1);  // right
+            } else {
+                playerMove(-1); // left
+            }
+        } else {
+            // Vertical swipe
+            if (dy > 0) {
+                playerDrop();   // swipe down = soft drop
+            }
+        }
+    }
+}, { passive: false });
+
+// ============================================================
+// ON-SCREEN BUTTON CONTROLS (Mobile)
+// ============================================================
+function setupTouchButton(id, action) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    // Use mousedown for immediate response (no 300ms delay)
+    btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (!game.running || game.paused) return;
+        action();
+    });
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!game.running || game.paused) return;
+        action();
+    }, { passive: false });
+}
+
+setupTouchButton('touch-left', () => playerMove(-1));
+setupTouchButton('touch-right', () => playerMove(1));
+setupTouchButton('touch-down', () => playerDrop());
+setupTouchButton('touch-rotate', () => playerRotate(1));
+setupTouchButton('touch-hard-drop', () => hardDrop());
+
+// Touch power-up buttons
+setupTouchButton('touch-pu-slow', () => activatePowerup('slow'));
+setupTouchButton('touch-pu-clear', () => activatePowerup('clear'));
+setupTouchButton('touch-pu-bomb', () => activatePowerup('bomb'));
+
+// Repeating hold for left/right/down
+function startHold(id, action) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    let holdInterval = null;
+    const startHoldAction = (e) => {
+        e.preventDefault();
+        if (!game.running || game.paused) return;
+        action();
+        holdInterval = setInterval(() => {
+            if (!game.running || game.paused) { clearInterval(holdInterval); return; }
+            action();
+        }, 100);
+    };
+    const stopHold = () => { if (holdInterval) { clearInterval(holdInterval); holdInterval = null; } };
+
+    btn.addEventListener('mousedown', startHoldAction);
+    btn.addEventListener('touchstart', startHoldAction, { passive: false });
+    btn.addEventListener('mouseup', stopHold);
+    btn.addEventListener('mouseleave', stopHold);
+    btn.addEventListener('touchend', stopHold);
+    btn.addEventListener('touchcancel', stopHold);
+}
+startHold('touch-left', () => playerMove(-1));
+startHold('touch-right', () => playerMove(1));
+startHold('touch-down', () => playerDrop());
+
+// ============================================================
 // INIT
 // ============================================================
 loadWallet();
@@ -1434,3 +1591,4 @@ updateCreditUI();
 updateHighScoreDisplay();
 updateLivesUI();
 checkDailyLogin();
+resizeCanvas();
