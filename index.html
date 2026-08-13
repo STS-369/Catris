@@ -3,42 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catris | Sophi's Portfolio</title>
+    <title>Catris | Purr-fectly Stacked!</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Ad Banner Placeholder -->
+    <div id="ad-banner" class="ad-banner">
+        <span class="ad-label">ADVERTISEMENT</span>
+        <div class="ad-placeholder">🐱 Cat Snacks — Coming Soon! 🐟</div>
+    </div>
+
     <div class="game-container">
+        <!-- Left Sidebar: Info -->
         <div class="sidebar left">
-            <h3>Next Cat</h3>
+            <h3>🐱 Next Cat</h3>
             <canvas id="next" width="100" height="100"></canvas>
-            <div class="stats">
+            
+            <div class="info-block">
+                <div class="level-display">
+                    <span class="label">Level</span>
+                    <span id="level" class="big-number">1</span>
+                </div>
+                <div id="level-name" class="level-name">Classic</div>
+            </div>
+
+            <div class="info-block">
+                <div class="lives-display">
+                    <span class="label">Lives</span>
+                    <span id="lives" class="lives-hearts">❤️❤️❤️</span>
+                </div>
+            </div>
+
+            <div class="info-block">
                 <p>Score: <span id="score">0</span></p>
                 <p>Lines: <span id="lines">0</span></p>
+                <p>Combo: <span id="combo">x1</span></p>
+            </div>
+
+            <div class="info-block">
+                <p>High Score: <span id="highscore">0</span></p>
             </div>
         </div>
 
+        <!-- Main Game Stage -->
         <div class="main-stage">
             <canvas id="tetris" width="240" height="400"></canvas>
-            <div id="overlay" class="overlay">
+
+            <!-- Power-ups Inventory -->
+            <div id="powerups" class="powerups-bar">
+                <button id="pu-slow" class="pu-btn" title="Slow Time (press 1)" disabled>🕐 ×<span id="pu-slow-count">0</span></button>
+                <button id="pu-clear" class="pu-btn" title="Clear Line (press 2)" disabled>✨ ×<span id="pu-clear-count">0</span></button>
+                <button id="pu-bomb" class="pu-btn" title="Bomb (press 3)" disabled>💣 ×<span id="pu-bomb-count">0</span></button>
+            </div>
+
+            <!-- Overlays -->
+            <div id="overlay-start" class="overlay visible">
                 <div class="content">
-                    <h1>CATRIS</h1>
-                    <p>Purr-fectly Stacked!</p>
-                    <button id="start-btn">Start Meow!</button>
+                    <h1>🐱 CATRIS 🐱</h1>
+                    <p class="tagline">Purr-fectly Stacked!</p>
+                    <button id="start-btn" class="btn-primary">🐾 Start Meow!</button>
+                    <button id="load-btn" class="btn-secondary">💾 Load Game</button>
+                    <button id="highscores-btn" class="btn-secondary">🏆 High Scores</button>
+                    <button id="skins-btn" class="btn-secondary">🎨 Cat Skins</button>
+                    <button id="donate-btn" class="btn-donate">☕ Donate</button>
+                </div>
+            </div>
+
+            <div id="overlay-pause" class="overlay hidden">
+                <div class="content">
+                    <h1>⏸️ PAUSED</h1>
+                    <button id="resume-btn" class="btn-primary">▶ Resume</button>
+                    <button id="save-btn-pause" class="btn-secondary">💾 Save Game</button>
+                    <button id="quit-btn" class="btn-secondary">🏠 Main Menu</button>
+                </div>
+            </div>
+
+            <div id="overlay-gameover" class="overlay hidden">
+                <div class="content">
+                    <h1>😿 GAME OVER</h1>
+                    <div id="gameover-stats" class="stats-block">
+                        <p>Final Score: <span id="final-score">0</span></p>
+                        <p>Lines Cleared: <span id="final-lines">0</span></p>
+                        <p>Level Reached: <span id="final-level">1</span></p>
+                        <p>Max Combo: <span id="final-combo">x1</span></p>
+                    </div>
+                    <div id="new-highscore" class="new-highscore hidden">🏆 NEW HIGH SCORE! 🏆</div>
+                    <button id="retry-btn" class="btn-primary">🔄 Try Again</button>
+                    <button id="menu-btn" class="btn-secondary">🏠 Main Menu</button>
+                </div>
+            </div>
+
+            <div id="overlay-levelup" class="overlay hidden">
+                <div class="content">
+                    <h1 id="levelup-title">🎉 LEVEL UP!</h1>
+                    <p id="levelup-desc" class="tagline"></p>
+                    <div id="levelup-mechanics" class="mechanics-list"></div>
+                    <button id="levelup-btn" class="btn-primary">🚀 Continue!</button>
+                </div>
+            </div>
+
+            <div id="overlay-saves" class="overlay hidden">
+                <div class="content">
+                    <h1>💾 Save / Load</h1>
+                    <div id="save-slots" class="save-slots"></div>
+                    <button id="close-saves-btn" class="btn-secondary">✖ Close</button>
+                </div>
+            </div>
+
+            <div id="overlay-highscores" class="overlay hidden">
+                <div class="content">
+                    <h1>🏆 High Scores</h1>
+                    <div id="highscores-list" class="highscores-list"></div>
+                    <button id="close-highscores-btn" class="btn-secondary">✖ Close</button>
+                </div>
+            </div>
+
+            <div id="overlay-skins" class="overlay hidden">
+                <div class="content">
+                    <h1>🎨 Cat Skins</h1>
+                    <div id="skins-list" class="skins-list"></div>
+                    <button id="close-skins-btn" class="btn-secondary">✖ Close</button>
                 </div>
             </div>
         </div>
 
+        <!-- Right Sidebar: Controls -->
         <div class="sidebar right">
             <h3>Controls</h3>
             <ul>
-                <li>⬅️ Move Left</li>
-                <li>➡️ Move Right</li>
+                <li>⬅️ / ➡️ Move</li>
                 <li>⬆️ Rotate</li>
                 <li>⬇️ Soft Drop</li>
                 <li>Space Hard Drop</li>
+                <li>ESC Pause</li>
+                <li>1⃣ Slow Time</li>
+                <li>2⃣ Clear Line</li>
+                <li>3⃣ Bomb</li>
             </ul>
+
+            <div class="level-progress-box">
+                <h4>Level Progress</h4>
+                <div class="progress-bar-outer">
+                    <div id="progress-bar" class="progress-bar-inner" style="width:0%"></div>
+                </div>
+                <p id="progress-text" class="progress-text">0 / 10 lines</p>
+            </div>
         </div>
     </div>
+
     <script src="catris.js"></script>
 </body>
 </html>
