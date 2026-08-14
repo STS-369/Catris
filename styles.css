@@ -133,24 +133,24 @@ body {
     border: 2px solid #444;
     background: #000;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 }
 canvas#tetris {
     display: block;
     max-width: 100%;
     height: auto;
+    flex-shrink: 0;
 }
 
 /* === POWER-UPS BAR === */
 .powerups-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: space-around;
     padding: 4px;
     background: rgba(0, 0, 0, 0.7);
     border-top: 1px solid #333;
+    flex-shrink: 0;
 }
 .pu-btn {
     background: #222;
@@ -243,12 +243,8 @@ canvas#tetris {
     right: 4px;
 }
 
-/* Power-ups bar — compact on mobile, positioned above bottom edge */
+/* Power-ups bar — compact on mobile */
 .powerups-bar.mobile-compact {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: center;
     gap: 4px;

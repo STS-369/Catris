@@ -291,6 +291,8 @@ const LEVELS = [
 // ============================================================
 const ARENA_W = 12;
 const ARENA_H = 20;
+const PIXEL_ART_H = 2; // logical units of pixel art zone below arena (40px)
+const CANVAS_TOTAL_H = ARENA_H + PIXEL_ART_H; // 22 logical units
 const MAX_LIVES = 3;
 const SAVE_SLOTS = 5;
 
@@ -497,6 +499,292 @@ function drawWalls() {
     }
 }
 
+// ============================================================
+// PIXEL ART LEVEL THEMES — 8-bit decorative border at bottom
+// ============================================================
+// Helper: draw a filled pixel-art rectangle (in logical units)
+function px(x, y, w, h, color) {
+    context.fillStyle = color;
+    context.fillRect(x, y, w, h);
+}
+
+function drawPixelArtTheme() {
+    const y0 = ARENA_H; // pixel art zone starts at y=20
+    const pw = 0.3;     // pixel width (6px)
+    const ph = 0.25;    // pixel height (5px)
+
+    // Background strip for the pixel art zone
+    context.fillStyle = '#0a0a12';
+    context.fillRect(0, y0, ARENA_W, PIXEL_ART_H);
+
+    switch (game.level) {
+        case 1: drawCityscape(y0, pw, ph); break;
+        case 2: drawRaceTrack(y0, pw, ph); break;
+        case 3: drawExplosion(y0, pw, ph); break;
+        case 4: drawCastle(y0, pw, ph); break;
+        case 5: drawNature(y0, pw, ph); break;
+        default: drawCityscape(y0, pw, ph); break;
+    }
+
+    // Thin separator line between arena and pixel art
+    context.fillStyle = '#333';
+    context.fillRect(0, y0, ARENA_W, 0.05);
+}
+
+// Level 1 (Classic): Cityscape silhouette
+// Pre-compute random window states to avoid per-frame flicker
+const _cityWindows = [];
+for (let i = 0; i < 30; i++) _cityWindows.push(Math.random() > 0.3);
+
+function drawCityscape(y0, pw, ph) {
+    const c = {
+        sky: '#0d0d1a',
+        building: '#1a1a2e',
+        window: '#ffcc00',
+        windowDim: '#554400',
+        roof: '#252540',
+    };
+    // Sky
+    px(0, y0, ARENA_W, PIXEL_ART_H, c.sky);
+
+    // Buildings: x, width (in pixel units), height (in pixel units)
+    const buildings = [
+        { x: 0, w: 3, h: 5 },
+        { x: 3, w: 2, h: 7 },
+        { x: 5, w: 3, h: 4 },
+        { x: 8, w: 2, h: 6 },
+        { x: 10, w: 2, h: 5 },
+    ];
+
+    let winIdx = 0;
+    buildings.forEach(b => {
+        const bx = b.x * pw;
+        const bw = b.w * pw;
+        const bh = b.h * ph;
+        const by = y0 + PIXEL_ART_H - bh;
+        // Building body
+        px(bx, by, bw, bh, c.building);
+        // Roof
+        px(bx, by, bw, ph * 0.6, c.roof);
+        // Windows (2 columns)
+        for (let wy = 0; wy < Math.floor(bh / (ph * 2)) - 1; wy++) {
+            for (let wx = 0; wx < Math.min(2, b.w); wx++) {
+                const winColor = _cityWindows[winIdx % _cityWindows.length] ? c.window : c.windowDim;
+                winIdx++;
+                px(bx + wx * pw * 1.1 + pw * 0.3, by + ph * 1.5 + wy * ph * 2, pw * 0.5, ph * 0.7, winColor);
+            }
+        }
+    });
+}
+
+// Level 2 (Speed): Racing track
+function drawRaceTrack(y0, pw, ph) {
+    const c = {
+        asphalt: '#2a2a2a',
+        lane: '#ffffff',
+        grass: '#1a4a1a',
+        curb: '#cc3333',
+    };
+    // Grass strips top and bottom
+    px(0, y0, ARENA_W, ph * 1.5, c.grass);
+    px(0, y0 + PIXEL_ART_H - ph * 1.5, ARENA_W, ph * 1.5, c.grass);
+
+    // Asphalt
+    const roadY = y0 + ph * 1.5;
+    const roadH = PIXEL_ART_H - ph * 3;
+    px(0, roadY, ARENA_W, roadH, c.asphalt);
+
+    // Red-white curb pattern (top)
+    for (let i = 0; i < Math.ceil(ARENA_W / (pw * 2)); i++) {
+        px(i * pw * 2, y0 + ph * 0.8, pw, ph * 0.7, i % 2 === 0 ? c.curb : '#ffffff');
+    }
+
+    // Dashed center line
+    for (let i = 0; i < Math.ceil(ARENA_W / (pw * 2.5)); i++) {
+        if (i % 2 === 0) {
+            px(i * pw * 2.5, y0 + PIXEL_ART_H / 2 - ph * 0.2, pw * 1.5, ph * 0.4, c.lane);
+        }
+    }
+
+    // Curb pattern (bottom)
+    for (let i = 0; i < Math.ceil(ARENA_W / (pw * 2)); i++) {
+        px(i * pw * 2, y0 + PIXEL_ART_H - ph * 1.5, pw, ph * 0.7, i % 2 === 0 ? c.curb : '#ffffff');
+    }
+
+    // Checkered flag pattern at right side
+    const flagX = ARENA_W - pw * 4;
+    for (let fy = 0; fy < 4; fy++) {
+        for (let fx = 0; fx < 2; fx++) {
+            px(flagX + fx * pw, y0 + ph + fy * ph, pw, ph, (fx + fy) % 2 === 0 ? '#ffffff' : '#000000');
+        }
+    }
+}
+
+// Level 3 (Bomb): Explosion/crater
+function drawExplosion(y0, pw, ph) {
+    const c = {
+        ground: '#2a1a0a',
+        crater: '#1a0a00',
+        fire1: '#ff4400',
+        fire2: '#ff8800',
+        fire3: '#ffcc00',
+        smoke: '#444444',
+    };
+    // Ground
+    px(0, y0, ARENA_W, PIXEL_ART_H, c.ground);
+
+    // Crater (bowl shape)
+    const craterW = 8;
+    const craterD = 3;
+    const craterX = (ARENA_W - craterW * pw) / 2;
+    for (let i = 0; i < craterD; i++) {
+        const rowW = craterW - i * 2;
+        if (rowW > 0) {
+            px(craterX + i * pw, y0 + PIXEL_ART_H - (craterD - i) * ph, rowW * pw, ph, c.crater);
+        }
+    }
+
+    // Explosion particles (fire)
+    const particles = [
+        { x: 5, y: -1, c: c.fire3 },
+        { x: 6, y: -2, c: c.fire2 },
+        { x: 4, y: -1, c: c.fire1 },
+        { x: 7, y: -1, c: c.fire2 },
+        { x: 5.5, y: -3, c: c.fire3 },
+        { x: 3, y: 0, c: c.smoke },
+        { x: 8, y: 0, c: c.smoke },
+        { x: 4.5, y: -2, c: c.fire1 },
+        { x: 6.5, y: -1.5, c: c.fire3 },
+    ];
+    particles.forEach(p => {
+        px(p.x * pw, y0 + PIXEL_ART_H + p.y * ph, pw * 0.8, ph * 0.8, p.c);
+    });
+
+    // Small rocks/debris
+    px(2 * pw, y0 + PIXEL_ART_H - ph, pw * 0.6, ph * 0.5, '#554433');
+    px(9 * pw, y0 + PIXEL_ART_H - ph, pw * 0.6, ph * 0.5, '#554433');
+}
+
+// Level 4 (Boss): Castle/fortress
+function drawCastle(y0, pw, ph) {
+    const c = {
+        wall: '#3a3a4a',
+        wallLight: '#4a4a5a',
+        turret: '#2a2a3a',
+        gate: '#1a0a00',
+        flag: '#cc3333',
+        stone: '#555566',
+    };
+    // Background
+    px(0, y0, ARENA_W, PIXEL_ART_H, '#0a0a14');
+
+    // Left turret
+    px(0, y0 + ph * 2, pw * 2, PIXEL_ART_H - ph * 2, c.turret);
+    // Crenellations on left turret
+    for (let i = 0; i < 2; i++) {
+        px(i * pw, y0 + ph * 1.2, pw * 0.8, ph * 1.2, c.turret);
+    }
+    // Flag on left turret
+    px(pw * 0.3, y0, pw * 0.4, ph * 1.5, c.flag);
+
+    // Right turret
+    px(ARENA_W - pw * 2, y0 + ph * 2, pw * 2, PIXEL_ART_H - ph * 2, c.turret);
+    for (let i = 0; i < 2; i++) {
+        px(ARENA_W - pw * 2 + i * pw, y0 + ph * 1.2, pw * 0.8, ph * 1.2, c.turret);
+    }
+    px(ARENA_W - pw * 1.7, y0, pw * 0.4, ph * 1.5, c.flag);
+
+    // Center wall
+    px(pw * 2, y0 + ph * 3, ARENA_W - pw * 4, PIXEL_ART_H - ph * 3, c.wall);
+
+    // Crenellations on center wall
+    for (let i = 0; i < Math.ceil((ARENA_W - pw * 4) / (pw * 1.5)); i++) {
+        px(pw * 2 + i * pw * 1.5, y0 + ph * 2.2, pw, ph * 1.2, c.wallLight);
+    }
+
+    // Gate (arch)
+    const gateW = pw * 2.5;
+    const gateH = ph * 3;
+    const gateX = (ARENA_W - gateW) / 2;
+    px(gateX, y0 + PIXEL_ART_H - gateH, gateW, gateH, c.gate);
+    // Gate arch top
+    px(gateX + pw * 0.3, y0 + PIXEL_ART_H - gateH - ph * 0.5, gateW - pw * 0.6, ph * 0.8, c.gate);
+
+    // Stone detail
+    px(pw * 2.5, y0 + ph * 4, pw * 0.5, ph * 0.4, c.stone);
+    px(ARENA_W - pw * 3, y0 + ph * 4, pw * 0.5, ph * 0.4, c.stone);
+}
+
+// Level 5 (Zen): Nature/landscape
+function drawNature(y0, pw, ph) {
+    const c = {
+        sky: '#0a1a2a',
+        skyLight: '#1a2a3a',
+        grass: '#1a4a1a',
+        grassLight: '#2a5a2a',
+        mountain: '#2a3a2a',
+        mountainSnow: '#aabbcc',
+        tree: '#1a3a1a',
+        trunk: '#3a2a1a',
+        sun: '#ffcc00',
+        sunGlow: '#ff8800',
+    };
+    // Sky gradient
+    px(0, y0, ARENA_W, PIXEL_ART_H * 0.4, c.sky);
+    px(0, y0 + PIXEL_ART_H * 0.4, ARENA_W, PIXEL_ART_H * 0.6, c.skyLight);
+
+    // Sun
+    px(ARENA_W - pw * 3, y0 + ph * 0.5, pw * 2, ph * 2, c.sun);
+    px(ARENA_W - pw * 3.5, y0 + ph, pw * 3, ph, c.sunGlow);
+
+    // Mountains
+    const mountains = [
+        { x: 1, w: 4, h: 4 },
+        { x: 5, w: 3, h: 3 },
+        { x: 8, w: 4, h: 5 },
+    ];
+    mountains.forEach(m => {
+        const mx = m.x * pw;
+        const mw = m.w * pw;
+        const mh = m.h * ph;
+        const my = y0 + PIXEL_ART_H - ph * 2 - mh;
+        // Mountain body (triangle approximated with rectangles)
+        for (let i = 0; i < m.h; i++) {
+            const rowW = mw * (1 - i / m.h);
+            const rowX = mx + (mw - rowW) / 2;
+            px(rowX, my + i * ph, rowW, ph, c.mountain);
+        }
+        // Snow cap
+        px(mx + mw / 2 - pw * 0.5, my, pw, ph, c.mountainSnow);
+    });
+
+    // Ground/grass
+    px(0, y0 + PIXEL_ART_H - ph * 2, ARENA_W, ph * 2, c.grass);
+    // Grass highlights
+    for (let i = 0; i < 8; i++) {
+        px(i * pw * 1.5 + pw * 0.5, y0 + PIXEL_ART_H - ph * 2, pw * 0.5, ph * 0.6, c.grassLight);
+    }
+
+    // Trees
+    const trees = [
+        { x: 2, h: 3 },
+        { x: 6, h: 2 },
+        { x: 10, h: 2.5 },
+    ];
+    trees.forEach(t => {
+        const tx = t.x * pw;
+        const th = t.h * ph;
+        const ty = y0 + PIXEL_ART_H - ph * 2 - th;
+        // Trunk
+        px(tx + pw * 0.4, ty + th * 0.6, pw * 0.3, th * 0.4, c.trunk);
+        // Canopy (triangle)
+        for (let i = 0; i < Math.floor(t.h * 1.5); i++) {
+            const rowW = pw * (1 - i / (t.h * 1.5)) * 1.5;
+            px(tx + pw * 0.55 - rowW / 2, ty + i * ph * 0.5, rowW, ph * 0.5, c.tree);
+        }
+    });
+}
+
 function draw() {
     // Zen mode: semi-transparent background
     context.fillStyle = game.zenMode ? '#0a0a1a' : '#000';
@@ -507,6 +795,9 @@ function draw() {
         drawMatrix(player.matrix, player.pos);
     }
     drawWalls();
+
+    // Draw pixel art level theme at bottom
+    drawPixelArtTheme();
 
     // Slow time visual effect
     if (game.activePowerup === 'slow') {
@@ -1442,15 +1733,15 @@ function resizeCanvas() {
         // On mobile, canvas fills available width (with some padding)
         const maxW = Math.min(containerWidth - 16, 300);
         canvas.style.width = maxW + 'px';
-        canvas.style.height = (maxW * (ARENA_H / ARENA_W)) + 'px';
+        canvas.style.height = (maxW * (CANVAS_TOTAL_H / ARENA_W)) + 'px';
         canvas.width = ARENA_W * 20;
-        canvas.height = ARENA_H * 20;
+        canvas.height = CANVAS_TOTAL_H * 20;
     } else {
         // Desktop: fixed size
         canvas.style.width = '';
         canvas.style.height = '';
-        canvas.width = 240;
-        canvas.height = 400;
+        canvas.width = ARENA_W * 20;
+        canvas.height = CANVAS_TOTAL_H * 20;
     }
     context.scale(20, 20);
 }
